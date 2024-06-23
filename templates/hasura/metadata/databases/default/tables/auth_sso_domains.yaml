@@ -1,0 +1,16 @@
+table:
+  name: sso_domains
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteSsoDomains
+    delete_by_pk: authDeleteSsoDomain
+    insert: authCreateSsoDomains
+    insert_one: authCreateSsoDomain
+    select: authSsoDomains
+    select_aggregate: authSsoDomainsAggregate
+    select_by_pk: authSsoDomain
+    update: authUpdateSsoDomains
+    update_by_pk: authUpdateSsoDomain

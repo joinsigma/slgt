@@ -1,0 +1,16 @@
+table:
+  name: saml_providers
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteSamlProviders
+    delete_by_pk: authDeleteSamlProvider
+    insert: authCreateSamlProviders
+    insert_one: authCreateSamlProvider
+    select: authSamlProviders
+    select_aggregate: authSamlProvidersAggregate
+    select_by_pk: authSamlProvider
+    update: authUpdateSamlProviders
+    update_by_pk: authUpdateSamlProvider

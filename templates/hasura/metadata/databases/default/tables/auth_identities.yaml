@@ -1,0 +1,16 @@
+table:
+  name: identities
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteIdentities
+    delete_by_pk: authDeleteIdentity
+    insert: authCreateIdentities
+    insert_one: authCreateIdentity
+    select: authIdentities
+    select_aggregate: authIdentitiesAggregate
+    select_by_pk: authIdentity
+    update: authUpdateIdentities
+    update_by_pk: authUpdateIdentity

@@ -1,0 +1,16 @@
+table:
+  name: audit_log_entries
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteAuditLogEntries
+    delete_by_pk: authDeleteAuditLogEntry
+    insert: authCreateAuditLogEntries
+    insert_one: authCreateAuditLogEntry
+    select: authAuditLogEntries
+    select_aggregate: authAuditLogEntriesAggregate
+    select_by_pk: authAuditLogEntry
+    update: authUpdateAuditLogEntries
+    update_by_pk: authUpdateAuditLogEntry

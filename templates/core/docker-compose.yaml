@@ -1,0 +1,14 @@
+## docker-compose.yaml
+version: '3.6'
+services:
+  core-api:
+    container_name: '__SUPABASE_PROJECT_NAME__-core'
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: __SUPABASE_PROJECT_NAME__-core
+    command: npm run start
+    network_mode: host
+    restart: always # if fail (REASON - OOM or etc) restart always
+    env_file:
+      - .env

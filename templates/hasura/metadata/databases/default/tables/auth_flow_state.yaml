@@ -1,0 +1,16 @@
+table:
+  name: flow_state
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteFlowStates
+    delete_by_pk: authDeleteFlowState
+    insert: authCreateFlowStates
+    insert_one: authCreateFlowState
+    select: authFlowStates
+    select_aggregate: authFlowStatesAggregate
+    select_by_pk: authFlowState
+    update: authUpdateFlowStates
+    update_by_pk: authUpdateFlowState

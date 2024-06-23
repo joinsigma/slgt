@@ -1,0 +1,16 @@
+table:
+  name: saml_relay_states
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteSamlRelayStates
+    delete_by_pk: authDeleteSamlRelayState
+    insert: authCreateSamlRelayStates
+    insert_one: authCreateSamlRelayState
+    select: authSamlRelayStates
+    select_aggregate: authSamlRelayStatesAggregate
+    select_by_pk: authSamlRelayState
+    update: authUpdateSamlRelayStates
+    update_by_pk: authUpdateSamlRelayState

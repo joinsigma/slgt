@@ -1,0 +1,16 @@
+table:
+  name: mfa_amr_claims
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: deleteAuthMfaAmrClaims
+    delete_by_pk: deleteAuthMfaAmrClaim
+    insert: createAuthMfaAmrClaims
+    insert_one: createAuthMfaAmrClaim
+    select: authMfaAmrClaims
+    select_aggregate: authMfaAmrClaimsAggregate
+    select_by_pk: authMfaAmrClaim
+    update: updateAuthMfaAmrClaims
+    update_by_pk: updateAuthMfaAmrClaim

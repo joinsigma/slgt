@@ -1,0 +1,16 @@
+table:
+  name: refresh_tokens
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteRefreshTokens
+    delete_by_pk: authDeleteRefreshToken
+    insert: authCreateRefreshTokens
+    insert_one: authCreateRefreshToken
+    select: authRefreshTokens
+    select_aggregate: authRefreshTokensAggregate
+    select_by_pk: authRefreshToken
+    update: authUpdateRefreshTokens
+    update_by_pk: authUpdateRefreshToken

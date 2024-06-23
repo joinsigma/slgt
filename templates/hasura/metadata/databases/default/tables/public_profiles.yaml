@@ -1,0 +1,16 @@
+table:
+  name: profiles
+  schema: public
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: deleteProfiles
+    delete_by_pk: deleteProfile
+    insert: createProfiles
+    insert_one: createProfile
+    select: profiles
+    select_aggregate: profilesAggregate
+    select_by_pk: profile
+    update: updateProfiles
+    update_by_pk: updateProfile

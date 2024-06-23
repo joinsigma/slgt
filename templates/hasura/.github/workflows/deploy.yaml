@@ -1,0 +1,63 @@
+on:
+  push:
+    branches: [main]
+
+name: Deploy Hasura Server to Cloud Run
+env:
+  SERVICE: __SUPABASE_PROJECT_NAME__-hasura
+  REGION: asia-southeast1
+  PORT: 8080
+  CORS_DOMAINS: "*"
+  HASURA_VERSION: v2.9.0
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+  GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}
+  HASURA_GRAPHQL_DATABASE_URL: ${{ secrets.HASURA_GRAPHQL_DATABASE_URL }}
+  HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}
+
+# To scale automatically, set the min-instances to 1
+# You may need to increase the memory based on your usage. We have it set as 512Mi for now.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          service_account_key: ${{ env.GCP_SA_KEY }}
+
+      - name: Authorize Docker push
+        run: gcloud auth configure-docker
+
+      - name: Pull and Push to GCR
+        run: |-
+          docker pull hasura/graphql-engine:${{ env.HASURA_VERSION }}
+          docker tag hasura/graphql-engine:${{ env.HASURA_VERSION }} asia.gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }}
+          docker push asia.gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |-
+          gcloud run deploy ${{ env.SERVICE }} \
+          --image asia.gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }} \
+          --port ${{env.PORT}} \
+          --region ${{ env.REGION }} \
+          --memory 512Mi \
+          --min-instances 0 \
+          --quiet \
+          --platform "managed" \
+          --service-account ${{ env.GCP_SA_EMAIL }} \
+          --allow-unauthenticated \
+          --set-env-vars "HASURA_GRAPHQL_DATABASE_URL=${{ env.HASURA_GRAPHQL_DATABASE_URL }}" \
+          --set-env-vars "HASURA_GRAPHQL_ENABLE_CONSOLE=true" \
+          --set-env-vars "HASURA_GRAPHQL_DEV_MODE=true" \
+          --set-env-vars "^@^HASURA_GRAPHQL_ENABLED_LOG_TYPES=startup, http-log, webhook-log, websocket-log, query-log" \
+          --set-env-vars "HASURA_GRAPHQL_ADMIN_SECRET=${{ env.HASURA_GRAPHQL_ADMIN_SECRET }}" \
+          --set-env-vars "HASURA_GRAPHQL_CORS_DOMAIN=${{ env.CORS_DOMAINS }}" \
+          --set-env-vars "HASURA_GRAPHQL_UNAUTHORIZED_ROLE=anonymous" \
+          --set-env-vars "HASURA_GRAPHQL_EXPERIMENTAL_FEATURES=naming_convention" \
+          --set-env-vars "HASURA_GRAPHQL_DEFAULT_NAMING_CONVENTION=graphql-default"

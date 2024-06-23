@@ -1,0 +1,62 @@
+on:
+  push:
+    branches: [main]
+
+name: Deploy Core Server to Cloud Run
+env:
+  SERVICE: __SUPABASE_PROJECT_NAME__-core
+  REGION: asia-southeast1
+  PORT: 8080
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+  GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  HASURA_GRAPHQL_ENDPOINT: ${{ secrets.HASURA_GRAPHQL_ENDPOINT }}
+  HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}
+  ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+
+# To scale automatically, set the min-instances to 1
+# You may need to increase the memory based on your usage. We have it set as 512Mi for now.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          service_account_key: ${{ env.GCP_SA_KEY }}
+
+      - name: Authorize Docker push
+        run: gcloud auth configure-docker
+
+      - name: Build and Push Container
+        run: |-
+          docker build \
+          --build-arg NODE_ENV=production \
+          --build-arg PORT="${{ env.PORT }}" \
+          --build-arg SUPABASE_URL="${{ env.SUPABASE_URL }}" \
+          --build-arg SUPABASE_ANON_KEY="${{ env.SUPABASE_ANON_KEY }}" \
+          --build-arg HASURA_GRAPHQL_ENDPOINT="${{ env.HASURA_GRAPHQL_ENDPOINT }}" \
+          --build-arg HASURA_GRAPHQL_ADMIN_SECRET="${{ env.HASURA_GRAPHQL_ADMIN_SECRET }}" \
+          --build-arg ENCRYPTION_KEY="${{ env.ENCRYPTION_KEY }}" \
+          -t asia.gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }} -f Dockerfile .
+          docker push asia.gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |-
+          gcloud run deploy ${{ env.SERVICE }} \
+          --image asia.gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }} \
+          --port ${{env.PORT}} \
+          --region ${{ env.REGION }} \
+          --memory 512Mi \
+          --min-instances 0 \
+          --quiet \
+          --platform "managed" \
+          --service-account ${{ env.GCP_SA_EMAIL }} \
+          --allow-unauthenticated

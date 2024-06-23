@@ -1,0 +1,16 @@
+table:
+  name: mfa_factors
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: deleteAuthMfaFactors
+    delete_by_pk: deleteAuthMfaFactor
+    insert: createAuthMfaFactors
+    insert_one: createAuthMfaFactor
+    select: authMfaFactors
+    select_aggregate: authMfaFactorsAggregate
+    select_by_pk: authMfaFactor
+    update: updateAuthMfaFactors
+    update_by_pk: updateAuthMfaFactor

@@ -1,0 +1,16 @@
+table:
+  name: instances
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: deleteAuthInstances
+    delete_by_pk: deleteAuthInstance
+    insert: createAuthInstances
+    insert_one: createAuthInstance
+    select: authInstances
+    select_aggregate: authInstancesAggregate
+    select_by_pk: authInstance
+    update: updateAuthInstances
+    update_by_pk: updateAuthInstance

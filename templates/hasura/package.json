@@ -1,0 +1,22 @@
+{
+  "name": "__SUPABASE_PROJECT_NAME__-hasura",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "status": "hasura migrate status",
+    "migrate:apply": "hasura migrate apply --database-name default",
+    "metadata:apply": "hasura metadata apply",
+    "metadata:export": "hasura metadata export",
+    "metadata:reload": "hasura metadata reload",
+    "hasura": "hasura"
+  },
+  "keywords": [],
+  "author": "kaiz16",
+  "license": "ISC",
+  "devDependencies": {
+    "hasura-cli": "^2.36.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

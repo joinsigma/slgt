@@ -1,0 +1,16 @@
+table:
+  name: sso_providers
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteSsoProviders
+    delete_by_pk: authDeleteSsoProvider
+    insert: authCreateSsoProviders
+    insert_one: authCreateSsoProvider
+    select: authSsoProviders
+    select_aggregate: authSsoProvidersAggregate
+    select_by_pk: authSsoProvider
+    update: authUpdateSsoProviders
+    update_by_pk: authUpdateSsoProvider

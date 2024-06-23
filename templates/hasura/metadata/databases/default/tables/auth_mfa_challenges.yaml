@@ -1,0 +1,16 @@
+table:
+  name: mfa_challenges
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: deleteAuthMfaChallenges
+    delete_by_pk: deleteAuthMfaChallenge
+    insert: createAuthMfaChallenges
+    insert_one: createAuthMfaChallenge
+    select: authMfaChallenges
+    select_aggregate: authMfaChallengesAggregate
+    select_by_pk: authMfaChallenge
+    update: updateAuthMfaChallenges
+    update_by_pk: updateAuthMfaChallenge

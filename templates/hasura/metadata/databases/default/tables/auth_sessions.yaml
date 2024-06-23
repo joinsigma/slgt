@@ -1,0 +1,16 @@
+table:
+  name: sessions
+  schema: auth
+configuration:
+  column_config: {}
+  custom_column_names: {}
+  custom_root_fields:
+    delete: authDeleteSessions
+    delete_by_pk: authDeleteSession
+    insert: authCreateSessions
+    insert_one: authCreateSession
+    select: authSessions
+    select_aggregate: authSessionsAggregate
+    select_by_pk: authSession
+    update: authUpdateSessions
+    update_by_pk: authUpdateSession
