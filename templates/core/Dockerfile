@@ -1,7 +1,7 @@
 # Builder stage
 FROM node:18.16.0-alpine as builder
 # LABELS
-LABEL org.opencontainers.image.source https://github.com/joinsigma/express-starter-ts
+LABEL org.opencontainers.image.source https://github.com/__GITHUB_USERNAME__/__SUPABASE_PROJECT_NAME__-core
 # Set the working directory
 WORKDIR /app
 # Copy package files

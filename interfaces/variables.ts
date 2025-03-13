@@ -6,4 +6,5 @@ export interface Variables {
   __HASURA_GRAPHQL_ADMIN_SECRET__: string;
   __HASURA_GRAPHQL_DATABASE_URL__: string;
   __ENCRYPTION_KEY__: string;
+  __GITHUB_USERNAME__: string;
 }

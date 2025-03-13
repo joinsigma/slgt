@@ -20,8 +20,6 @@ import generateUUID from "./utils/uuid.js";
 // Constants
 const ROOT_DIR = process.cwd();
 
-const GITHUB_ORG_NAME = "joinsigma";
-
 const VARIABLES: Variables = {
   __SUPABASE_PROJECT_NAME__: "",
   __SUPABASE_PROJECT_ID__: "",
@@ -30,6 +28,7 @@ const VARIABLES: Variables = {
   __HASURA_GRAPHQL_ADMIN_SECRET__: "",
   __HASURA_GRAPHQL_DATABASE_URL__: "",
   __ENCRYPTION_KEY__: "",
+  __GITHUB_USERNAME__: "",
 };
 
 const PARAMS: Params = {
@@ -94,6 +93,15 @@ const PARAMS: Params = {
     default: "",
     value: "",
   },
+  GITHUB_USERNAME: {
+    key: "GITHUB_USERNAME",
+    prompt:
+      "Enter your GitHub username.\n\nThis is used to create a new GitHub repository for the project.",
+    required: true,
+    type: "text",
+    default: "",
+    value: "",
+  },
 };
 
 async function delay(ms: number) {
@@ -133,6 +141,7 @@ async function replaceVariables(projectID: string) {
     PARAMS.SUPABASE_MANAGEMENT_TOKEN.value
   );
   VARIABLES.__ENCRYPTION_KEY__ = generateUUID();
+  VARIABLES.__GITHUB_USERNAME__ = PARAMS.GITHUB_USERNAME.value;
   console.log("🚀 Variables replaced.");
 }
 
@@ -206,6 +215,31 @@ async function startDockerContainer(path: string) {
   console.log("🚀 Docker container started.");
 }
 
+async function stopDockerContainer(path: string) {
+  console.log("🚀 Stopping Docker container in " + path);
+
+  // Stop and destroy docker container
+  await execa(
+    "docker",
+    [
+      "compose",
+      "-f",
+      path + "/docker-compose.yaml",
+      "down",
+      "--volumes",
+      "--rmi",
+      "all",
+      "--remove-orphans",
+    ],
+    {
+      stdio: "inherit",
+      shell: true,
+    }
+  );
+
+  console.log("🚀 Docker container stopped.");
+}
+
 async function initGit(path: string) {
   console.log("🚀 Initializing Git repository in " + path);
 
@@ -250,7 +284,11 @@ async function gitCommit(
   console.log("🚀 Committed to Git repository.");
 }
 
-async function createRepoInGitHub(path: string, repoName: string) {
+async function createRepoInGitHub(
+  path: string,
+  githubUsername: string,
+  repoName: string
+) {
   console.log("🚀 Creating GitHub repository...");
 
   process.chdir(path);
@@ -261,7 +299,7 @@ async function createRepoInGitHub(path: string, repoName: string) {
     [
       "repo",
       "create",
-      GITHUB_ORG_NAME + "/" + repoName,
+      githubUsername + "/" + repoName,
       "--source",
       ".",
       "--private",
@@ -297,46 +335,67 @@ async function createSecretsInGitHubRepo(
   path: string,
   extraSecrets: { key: string; value: string }[] = []
 ) {
-  console.log("🚀 Adding CI/CD secrets to GitHub repository for " + path);
-  // Copy /secrets folder to /tmp directory
-  await execa("cp", ["-r", "secrets/", "/tmp"], { shell: true });
+  // If user is part of joinsigma organization, add CI/CD secrets
+  const { stdout } = await execa("gh", ["org", "list"], { shell: true });
 
-  process.chdir(path);
+  const shouldSetupCICD = stdout.match("joinsigma");
 
-  // Set /tmp/secrets/.env.main as GitHub secret
-  await execa("gh", ["secret", "set", "-f", "/tmp/secrets/.env.main"], {
-    stdio: "inherit",
-    shell: true,
-  });
+  if (shouldSetupCICD) {
+    console.log(
+      "🚀 You are part of the joinsigma organization. Adding CI/CD secrets to GitHub repository for " +
+        path
+    );
+  } else {
+    console.log(
+      "🚀 You are NOT part of the joinsigma organization. Skipping CI/CD secrets..."
+    );
+  }
 
-  // Set /tmp/secrets/GCP_SA_KEY.json as GitHub secret (key: GCP_SA_KEY)
-  await execa(
-    "gh",
-    ["secret", "set", "GCP_SA_KEY", "<", "/tmp/secrets/GCP_SA_KEY.json"],
-    {
-      stdio: "inherit",
-      shell: true,
-    }
-  );
+  if (shouldSetupCICD) {
+    // Copy /secrets folder to generated directory
+    await execa("cp", ["-r", "secrets/", path], { shell: true });
+  }
 
-  // Create a new file /tmp/secrets/.env.extra with extra secrets
+  // Create a new file in generated directory with extra secrets
   let extraSecretsString = "";
   for (const secret of extraSecrets) {
     extraSecretsString += `${secret.key}=${secret.value}\n`;
   }
 
-  fs.writeFileSync("/tmp/secrets/.env.extra", extraSecretsString, "utf-8");
+  fs.writeFileSync(`${path}/.env.extra`, extraSecretsString, "utf-8");
 
-  // Set /tmp/secrets/.env.extra as GitHub secret
-  await execa("gh", ["secret", "set", "-f", "/tmp/secrets/.env.extra"], {
+  process.chdir(path);
+
+  // Set secrets
+  await execa("gh", ["secret", "set", "-f", ".env.extra"], {
     stdio: "inherit",
     shell: true,
   });
 
+  if (shouldSetupCICD) {
+    await execa("gh", ["secret", "set", "-f", "secrets/.env.main"], {
+      stdio: "inherit",
+      shell: true,
+    });
+
+    await execa(
+      "gh",
+      ["secret", "set", "GCP_SA_KEY", "<", "secrets/GCP_SA_KEY.json"],
+      {
+        stdio: "inherit",
+        shell: true,
+      }
+    );
+  }
+
   // Change back to root directory
   process.chdir(ROOT_DIR);
 
-  console.log("🚀 CI/CD secrets added to GitHub repository.");
+  // Cleanup
+  await execa("rm", ["-rf", `${path}/.env.extra`], { shell: true });
+  await execa("rm", ["-rf", `${path}/secrets`], { shell: true });
+
+  console.log("🚀 Secrets added to GitHub repository.");
 }
 
 async function main() {
@@ -379,7 +438,7 @@ async function main() {
   const organizationResponse = await prompts({
     type: "select",
     name: "organization_id",
-    message: "Pick an organization",
+    message: "Pick an organization from Supabase",
     choices: organizationChoices,
   });
 
@@ -442,7 +501,7 @@ async function main() {
         break;
       }
     } catch (error) {
-      console.log(error);
+      console.log("🚀 Hasura is not ready yet. Please be patient...");
     }
 
     await delay(1000);
@@ -481,10 +540,12 @@ async function main() {
   // Create GitHub repositories
   await createRepoInGitHub(
     "generated/hasura",
+    PARAMS.GITHUB_USERNAME.value,
     PARAMS.SUPABASE_PROJECT_NAME.value + "-hasura"
   );
   await createRepoInGitHub(
     "generated/core",
+    PARAMS.GITHUB_USERNAME.value,
     PARAMS.SUPABASE_PROJECT_NAME.value + "-core"
   );
 
@@ -530,6 +591,10 @@ async function main() {
   // Push to GitHub
   await pushToGitHub("generated/hasura");
   await pushToGitHub("generated/core");
+
+  // Stop docker containers
+  await stopDockerContainer("generated/hasura");
+  await stopDockerContainer("generated/core");
 
   // Delete /generated directory
   // await execa("rm", ["-rf", "generated"], { shell: true });

@@ -25,11 +25,13 @@ Please read the prerequisites and follow the instructions below to generate a ne
 1. [Node.js](https://nodejs.org/en/download/)
 2. [Docker](https://docs.docker.com/get-docker/)
 3. [Docker Compose](https://docs.docker.com/compose/install/)
-4. [GitHub CLI](https://cli.github.com/manual/installation)
+4. [GitHub CLI](https://github.com/cli/cli#installation)
    You must login to GitHub CLI using `gh auth login` before running the SLGT commands.
 5. Linux or Mac machine (Windows users can use WSL)
-6. Make sure you're GitHub account is part of the Sigma Labs organization on GitHub.
-7. For CI/CD to work, you need to have a `secrets` folder that contains the necessary secrets for the project. The `secrets` folder should be in the root of the SLGT repository. Contact the team lead or the project owner to get the `secrets` folder.
+
+**Note:** The CI/CD only works if you're part of the Sigma Labs organization on GitHub. If you're not part of the organization, you'll need to set it up manually.
+
+**Note:**. For CI/CD to work, you need to have a `secrets` folder that contains the necessary secrets for the project. The `secrets` folder should be in the root of the SLGT repository. Contact the team lead to get the `secrets` folder.
 
 #### Instructions
 
@@ -57,4 +59,3 @@ Please read the prerequisites and follow the instructions below to generate a ne
 2. Run the project locally and test it to make sure everything is working as expected. Check the README.md file in the generated project for instructions on how to run the project locally.
 3. Verify the GitHub Actions in newly created repository to make sure the CI/CD pipeline is working as expected.
 4. If you face any issues, please reach out to the team lead or the project owner.
-

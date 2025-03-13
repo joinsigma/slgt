@@ -1,7 +1,7 @@
 ### Checklist
 
-- [x] Have core server working
-- [x] Have Hasura working
-- [x] Tested with Insomnia
-- [] Setup repositories
-- [] Setup CI/CD
+- Have core server working ✅
+- Have Hasura working ✅
+- Tested with Insomnia ✅
+- Setup repositories ✅
+- Setup CI/CD ✅ (Only if you're part of the joinsigma organization)
