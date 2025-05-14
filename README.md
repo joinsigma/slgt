@@ -37,7 +37,7 @@ Please read the prerequisites and follow the instructions below to generate a ne
 
 1. Clone the SLGT repository:
    ```bash
-   git clone
+   git clone <repo_url>
    ```
 2. Change the directory to the SLGT repository:
    ```bash
