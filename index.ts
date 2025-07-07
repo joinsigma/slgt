@@ -2,6 +2,7 @@
 import { execa } from "execa";
 import prompts from "prompts";
 import axios from "axios";
+import { existsSync } from "fs";
 import fs from "fs";
 
 // Interfaces
@@ -16,6 +17,7 @@ import {
   listOrganizations,
 } from "./utils/supabase.js";
 import generateUUID from "./utils/uuid.js";
+import getIsWSL from "./utils/getIsWSL.js";
 
 // Constants
 const ROOT_DIR = process.cwd();
@@ -24,6 +26,7 @@ const VARIABLES: Variables = {
   __SUPABASE_PROJECT_NAME__: "",
   __SUPABASE_PROJECT_ID__: "",
   __SUPABASE_ANON_KEY__: "",
+  __SUPABASE_URL__: "",
   __HASURA_GRAPHQL_ENDPOINT__: "",
   __HASURA_GRAPHQL_ADMIN_SECRET__: "",
   __HASURA_GRAPHQL_DATABASE_URL__: "",
@@ -129,17 +132,20 @@ async function verifyDependencies() {
 
 async function replaceVariables(projectID: string) {
   console.log("🚀 Replacing variables...");
+  const password = encodeURIComponent(PARAMS.SUPABASE_DATABASE_PASSWORD.value);
+
   // Replace VARIABLES with values
   VARIABLES.__SUPABASE_PROJECT_NAME__ = PARAMS.SUPABASE_PROJECT_NAME.value;
   VARIABLES.__SUPABASE_PROJECT_ID__ = projectID;
   VARIABLES.__HASURA_GRAPHQL_ENDPOINT__ = `https://${PARAMS.SUPABASE_PROJECT_NAME.value}-hasura-krljeif4ga-as.a.run.app`;
   VARIABLES.__HASURA_GRAPHQL_ADMIN_SECRET__ =
     PARAMS.HASURA_GRAPHQL_ADMIN_SECRET.value;
-  VARIABLES.__HASURA_GRAPHQL_DATABASE_URL__ = `postgres://postgres.${VARIABLES.__SUPABASE_PROJECT_ID__}:${PARAMS.SUPABASE_DATABASE_PASSWORD.value}@aws-0-${PARAMS.SUPABASE_REGION.value}.pooler.supabase.com:5432/postgres`;
+  VARIABLES.__HASURA_GRAPHQL_DATABASE_URL__ = `postgres://postgres.${projectID}:${password}@aws-0-${PARAMS.SUPABASE_REGION.value}.pooler.supabase.com:5432/postgres`;
   VARIABLES.__SUPABASE_ANON_KEY__ = await getProjectAnonKey(
     projectID,
     PARAMS.SUPABASE_MANAGEMENT_TOKEN.value
   );
+  VARIABLES.__SUPABASE_URL__ = `https://${projectID}.supabase.co`;
   VARIABLES.__ENCRYPTION_KEY__ = generateUUID();
   VARIABLES.__GITHUB_USERNAME__ = PARAMS.GITHUB_USERNAME.value;
   console.log("🚀 Variables replaced.");
@@ -149,7 +155,8 @@ async function copyTemplatesAndReplaceVariables() {
   console.log("🚀 Cloning templates and replacing variables...");
 
   // Remove /generated directory if it already exists
-  await execa("rm", ["-rf", "generated"], { shell: true });
+  if (existsSync("generated"))
+    await execa("rm", ["-rf", "generated"], { shell: true });
 
   // Copy /templates directory to /generated
   await execa("cp", ["-r", "templates/", "generated"], { shell: true });
@@ -202,15 +209,13 @@ async function installDependencies(path: string) {
 async function startDockerContainer(path: string) {
   console.log("🚀 Starting Docker container in " + path);
 
+  const file = getIsWSL() ? "/docker-compose-win.yaml" : "/docker-compose.yaml";
+
   // Start docker container
-  await execa(
-    "docker",
-    ["compose", "-f", path + "/docker-compose.yaml", "up", "--build", "-d"],
-    {
-      stdio: "inherit",
-      shell: true,
-    }
-  );
+  await execa("docker", ["compose", "-f", path + file, "up", "--build", "-d"], {
+    stdio: "inherit",
+    shell: true,
+  });
 
   console.log("🚀 Docker container started.");
 }
@@ -218,13 +223,15 @@ async function startDockerContainer(path: string) {
 async function stopDockerContainer(path: string) {
   console.log("🚀 Stopping Docker container in " + path);
 
+  const file = getIsWSL() ? "/docker-compose-win.yaml" : "/docker-compose.yaml";
+
   // Stop and destroy docker container
   await execa(
     "docker",
     [
       "compose",
       "-f",
-      path + "/docker-compose.yaml",
+      path + file,
       "down",
       "--volumes",
       "--rmi",
@@ -550,39 +557,45 @@ async function main() {
   );
 
   // Add secrets to GitHub repository
-  await createSecretsInGitHubRepo("generated/hasura", [
-    {
-      key: "HASURA_GRAPHQL_DATABASE_URL",
-      value: VARIABLES.__HASURA_GRAPHQL_DATABASE_URL__,
-    },
-    {
-      key: "HASURA_GRAPHQL_ADMIN_SECRET",
-      value: VARIABLES.__HASURA_GRAPHQL_ADMIN_SECRET__,
-    },
-  ]);
+  try {
+    await createSecretsInGitHubRepo("generated/hasura", [
+      {
+        key: "HASURA_GRAPHQL_DATABASE_URL",
+        value: VARIABLES.__HASURA_GRAPHQL_DATABASE_URL__,
+      },
+      {
+        key: "HASURA_GRAPHQL_ADMIN_SECRET",
+        value: VARIABLES.__HASURA_GRAPHQL_ADMIN_SECRET__,
+      },
+    ]);
 
-  await createSecretsInGitHubRepo("generated/core", [
-    {
-      key: "SUPABASE_URL",
-      value: `https://${project.id}.supabase.co`,
-    },
-    {
-      key: "SUPABASE_ANON_KEY",
-      value: VARIABLES.__SUPABASE_ANON_KEY__,
-    },
-    {
-      key: "HASURA_GRAPHQL_ENDPOINT",
-      value: VARIABLES.__HASURA_GRAPHQL_ENDPOINT__,
-    },
-    {
-      key: "HASURA_GRAPHQL_ADMIN_SECRET",
-      value: VARIABLES.__HASURA_GRAPHQL_ADMIN_SECRET__,
-    },
-    {
-      key: "ENCRYPTION_KEY",
-      value: VARIABLES.__ENCRYPTION_KEY__,
-    },
-  ]);
+    await createSecretsInGitHubRepo("generated/core", [
+      {
+        key: "SUPABASE_URL",
+        value: `https://${project.id}.supabase.co`,
+      },
+      {
+        key: "SUPABASE_ANON_KEY",
+        value: VARIABLES.__SUPABASE_ANON_KEY__,
+      },
+      {
+        key: "HASURA_GRAPHQL_ENDPOINT",
+        value: VARIABLES.__HASURA_GRAPHQL_ENDPOINT__,
+      },
+      {
+        key: "HASURA_GRAPHQL_ADMIN_SECRET",
+        value: VARIABLES.__HASURA_GRAPHQL_ADMIN_SECRET__,
+      },
+      {
+        key: "ENCRYPTION_KEY",
+        value: VARIABLES.__ENCRYPTION_KEY__,
+      },
+    ]);
+  } catch (e) {
+    console.log(
+      "GitHub CLI version does not suppport org command, please update."
+    );
+  }
 
   // Commit everything
   await gitCommit("generated/hasura", ["."], '"Add secrets"');
